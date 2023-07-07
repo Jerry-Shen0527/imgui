@@ -306,7 +306,7 @@ bool ImGui_ImplSDL3_ProcessEvent(const SDL_Event* event)
         case SDL_EVENT_DISPLAY_CONNECTED:
         case SDL_EVENT_DISPLAY_DISCONNECTED:
         case SDL_EVENT_DISPLAY_MOVED:
-        case SDL_EVENT_DISPLAY_SCALE_CHANGED:
+        case SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED:
         {
             bd->WantUpdateMonitors = true;
             return true;
@@ -651,8 +651,7 @@ static void ImGui_ImplSDL3_UpdateMonitors()
         monitor.WorkSize = ImVec2((float)r.w, (float)r.h);
         // FIXME-VIEWPORT: On MacOS SDL reports actual monitor DPI scale, ignoring OS configuration. We may want to set
         //  DpiScale to cocoa_window.backingScaleFactor here.
-        const SDL_DisplayMode* display_mode = SDL_GetCurrentDisplayMode(display_id);
-        monitor.DpiScale = display_mode->display_scale;
+        monitor.DpiScale = SDL_GetDisplayContentScale(display_id);
         monitor.PlatformHandle = (void*)(intptr_t)n;
         platform_io.Monitors.push_back(monitor);
     }
@@ -753,7 +752,7 @@ static void ImGui_ImplSDL3_CreateWindow(ImGuiViewport* viewport)
     sdl_flags |= (viewport->Flags & ImGuiViewportFlags_NoDecoration) ? 0 : SDL_WINDOW_RESIZABLE;
 #if !defined(_WIN32)
     // See SDL hack in ImGui_ImplSDL3_ShowWindow().
-    sdl_flags |= (viewport->Flags & ImGuiViewportFlags_NoTaskBarIcon) ? SDL_WINDOW_SKIP_TASKBAR : 0;
+    sdl_flags |= (viewport->Flags & ImGuiViewportFlags_NoTaskBarIcon) ? SDL_WINDOW_UTILITY : 0;
 #endif
     sdl_flags |= (viewport->Flags & ImGuiViewportFlags_TopMost) ? SDL_WINDOW_ALWAYS_ON_TOP : 0;
     vd->Window = SDL_CreateWindow("No Title Yet", (int)viewport->Size.x, (int)viewport->Size.y, sdl_flags);
@@ -802,7 +801,7 @@ static void ImGui_ImplSDL3_ShowWindow(ImGuiViewport* viewport)
     HWND hwnd = (HWND)viewport->PlatformHandleRaw;
 
     // SDL hack: Hide icon from task bar
-    // Note: SDL 2.0.6+ has a SDL_WINDOW_SKIP_TASKBAR flag which is supported under Windows but the way it create the window breaks our seamless transition.
+    // Note: SDL 3.0.0+ has a SDL_WINDOW_UTILITY flag which is supported under Windows but the way it create the window breaks our seamless transition.
     if (viewport->Flags & ImGuiViewportFlags_NoTaskBarIcon)
     {
         LONG ex_style = ::GetWindowLong(hwnd, GWL_EXSTYLE);
